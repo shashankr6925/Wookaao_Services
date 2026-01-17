@@ -379,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const slider = document.getElementById("portfolioScroll");
   const btnLeft = document.querySelector(".portfolio-btn.left");
   const btnRight = document.querySelector(".portfolio-btn.right");
-  const cards = slider.querySelectorAll(".portfolio-card");
+  const cards = slider?.querySelectorAll(".portfolio-card");
 
   if (!slider || !btnLeft || !btnRight || !cards.length) return;
 
@@ -398,71 +398,100 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   /* =============================
-     RIGHT BUTTON →
+     BUTTON CONTROLS
   ============================== */
+
   btnRight.addEventListener("click", () => {
     if (currentIndex >= cards.length - 1) {
-      scrollToIndex(0); // reset to first
+      scrollToIndex(0);
     } else {
       scrollToIndex(currentIndex + 1);
     }
   });
 
-  /* =============================
-     LEFT BUTTON ←
-  ============================== */
   btnLeft.addEventListener("click", () => {
     if (currentIndex <= 0) {
-      scrollToIndex(cards.length - 1); // go to last
+      scrollToIndex(cards.length - 1);
     } else {
       scrollToIndex(currentIndex - 1);
     }
   });
 
   /* =============================
-     UPDATE INDEX AFTER DRAG / TOUCH
+     TOUCH + DRAG (MOBILE SAFE)
   ============================== */
+
   let isDown = false;
-  let startX;
-  let scrollStart;
+  let startX = 0;
+  let startY = 0;
+  let scrollStart = 0;
+  let isHorizontal = false;
 
-  slider.addEventListener("mousedown", startDrag);
-  slider.addEventListener("touchstart", startDrag, { passive: true });
-
-  function startDrag(e) {
+  slider.addEventListener("mousedown", (e) => {
     isDown = true;
-    startX = e.pageX || e.touches[0].pageX;
+    startX = e.pageX;
     scrollStart = slider.scrollLeft;
-  }
+  });
 
-  window.addEventListener("mouseup", endDrag);
-  window.addEventListener("touchend", endDrag);
+  slider.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    slider.scrollLeft = scrollStart - (e.pageX - startX);
+  });
 
-  function endDrag() {
+  window.addEventListener("mouseup", () => {
     if (!isDown) return;
     isDown = false;
-
     currentIndex = Math.round(slider.scrollLeft / getCardWidth());
     scrollToIndex(currentIndex);
-  }
+  });
 
-  slider.addEventListener("mousemove", dragMove);
-  slider.addEventListener("touchmove", dragMove, { passive: false });
+  /* ===== TOUCH EVENTS ===== */
 
-  function dragMove(e) {
+  slider.addEventListener("touchstart", (e) => {
+    isDown = true;
+    startX = e.touches[0].pageX;
+    startY = e.touches[0].pageY;
+    scrollStart = slider.scrollLeft;
+    isHorizontal = false;
+  }, { passive: true });
+
+  slider.addEventListener("touchmove", (e) => {
     if (!isDown) return;
-    e.preventDefault();
-    const x = e.pageX || e.touches[0].pageX;
+
+    const x = e.touches[0].pageX;
+    const y = e.touches[0].pageY;
+
+    const dx = Math.abs(x - startX);
+    const dy = Math.abs(y - startY);
+
+    // Allow vertical scroll
+    if (!isHorizontal) {
+      if (dy > dx) {
+        isDown = false;
+        return;
+      }
+      isHorizontal = true;
+    }
+
     slider.scrollLeft = scrollStart - (x - startX);
-  }
+  }, { passive: true });
+
+  window.addEventListener("touchend", () => {
+    if (!isDown) return;
+    isDown = false;
+    currentIndex = Math.round(slider.scrollLeft / getCardWidth());
+    scrollToIndex(currentIndex);
+  });
 
 });
 </script>
 
 
 
+
   </body>
 </html> 
+
 
 
 
